@@ -1,0 +1,21 @@
+{
+  "name": "cashpulse-bch-blaze-2026",
+  "version": "1.0.0",
+  "description": "CashPulse Escrow & Micro-Bounty Vault — BCH BLAZE 2026 Mainnet + CashTokens + Media Track Submission",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/vault.test.ts",
+    "test:py": "python3 -m unittest discover -s tests -p 'test_*.py' -v",
+    "media": "python3 scripts/generate_bch_media.py"
+  },
+  "keywords": [
+    "bitcoin-cash",
+    "bch",
+    "cashtokens",
+    "cashscript",
+    "bch-blaze-2026",
+    "wizardconnect",
+    "mainnet-js"
+  ],
+  "license": "MIT"
+}

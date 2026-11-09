@@ -1,0 +1,119 @@
+pragma cashscript ^0.10.0;
+
+/**
+ * CashPulseVault — BCH BLAZE 2026 Mainnet Covenant & CashTokens Micro-Bounty Escrow
+ *
+ * Enforces trustless, milestone-driven micro-bounty payouts in both native BCH (satoshis)
+ * and CashTokens (fungible category payouts) using Bitcoin Cash Native Introspection
+ * opcodes and a mutable NFT commitment that tracks milestone state on-chain.
+ *
+ * Mutable NFT Commitment Layout (8 bytes):
+ *   bytes2 milestoneIndex     (uint16 little-endian: completed milestone count)
+ *   bytes6 totalReleasedSats  (uint48 little-endian: cumulative satoshis paid out)
+ */
+contract CashPulseVault(
+    pubkey clientPk,
+    pubkey hunterPk,
+    pubkey arbiterPk,
+    bytes20 hunterPkh,
+    int totalMilestones,
+    int timeoutTimestamp
+) {
+    /**
+     * Release a milestone payout in BCH satoshis and/or CashTokens to the bounty hunter.
+     * Requires Client + Hunter co-signature (happy path) OR Arbiter + Hunter signature.
+     * Enforces covenant continuation on Output 0 if vault still holds funds/tokens.
+     */
+    function releaseMilestone(
+        sig primarySig,
+        pubkey primaryPk,
+        sig hunterSig,
+        int payoutSats,
+        int payoutTokens
+    ) {
+        // 1. Verify caller is either the Client or the Arbiter, co-signing with Hunter
+        require(hash160(primaryPk) == hash160(clientPk) || hash160(primaryPk) == hash160(arbiterPk));
+        require(checkSig(primarySig, primaryPk));
+        require(checkSig(hunterSig, hunterPk));
+        require(payoutSats >= 546);
+        require(payoutTokens >= 0);
+
+        // 2. Read current vault UTXO state via Native Introspection
+        int inputValue = tx.inputs[this.activeInputIndex].value;
+        int inputTokens = tx.inputs[this.activeInputIndex].tokenAmount;
+        bytes tokenCat = tx.inputs[this.activeInputIndex].tokenCategory;
+        bytes commitment = tx.inputs[this.activeInputIndex].nftCommitment;
+
+        // Decode 8-byte commitment: [milestoneIndex (2B), totalReleasedSats (6B)]
+        bytes2 milestoneBytes, bytes6 releasedBytes = commitment.split(2);
+        int currentMilestone = int(milestoneBytes);
+        int cumulativeReleased = int(releasedBytes);
+        int nextMilestone = currentMilestone + 1;
+        require(nextMilestone <= totalMilestones);
+
+        // 3. Enforce Hunter P2PKH Payout on Output 1 (or Output 0 on final milestone drain)
+        bytes25 hunterLockingBytecode = new LockingBytecodeP2PKH(hunterPkh);
+
+        int minerFee = 1000;
+        int remainingSats = inputValue - payoutSats - minerFee;
+        int remainingTokens = inputTokens - payoutTokens;
+
+        if (remainingSats > 1000 && nextMilestone < totalMilestones) {
+            // Covenant continuation on Output 0: preserve lockingBytecode & mutable NFT category
+            require(tx.outputs[0].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
+            require(tx.outputs[0].value >= remainingSats);
+            require(tx.outputs[0].tokenCategory == tokenCat);
+            require(tx.outputs[0].tokenAmount == remainingTokens);
+
+            // Update mutable NFT state commitment with incremented milestone & cumulative released sats
+            bytes8 nextCommitment = bytes2(nextMilestone) + bytes6(cumulativeReleased + payoutSats);
+            require(tx.outputs[0].nftCommitment == nextCommitment);
+
+            // Verify Hunter payout on Output 1
+            require(tx.outputs[1].lockingBytecode == hunterLockingBytecode);
+            require(tx.outputs[1].value >= payoutSats);
+            if (payoutTokens > 0) {
+                // Strip 0x01 mutable capability byte to match pure fungible category ID (32 bytes)
+                bytes32 fungibleCategory = bytes32(tokenCat.split(32)[0]);
+                require(tx.outputs[1].tokenCategory == fungibleCategory);
+                require(tx.outputs[1].tokenAmount >= payoutTokens);
+            }
+        } else {
+            // Final milestone drain: Output 0 pays directly to Hunter
+            require(tx.outputs[0].lockingBytecode == hunterLockingBytecode);
+            require(tx.outputs[0].value >= payoutSats);
+            if (payoutTokens > 0) {
+                bytes32 fungibleCategory = bytes32(tokenCat.split(32)[0]);
+                require(tx.outputs[0].tokenCategory == fungibleCategory);
+                require(tx.outputs[0].tokenAmount >= payoutTokens);
+            }
+        }
+    }
+
+    /**
+     * Reclaim unspent BCH & CashTokens back to the Client after timeoutTimestamp expires.
+     */
+    function reclaimExpired(sig clientSig, bytes20 clientRefundPkh) {
+        require(checkSig(clientSig, clientPk));
+        require(tx.time >= timeoutTimestamp);
+
+        bytes25 clientLockingBytecode = new LockingBytecodeP2PKH(clientRefundPkh);
+        int minerFee = 1000;
+        require(tx.outputs[0].lockingBytecode == clientLockingBytecode);
+        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - minerFee);
+        require(tx.outputs[0].tokenAmount >= tx.inputs[this.activeInputIndex].tokenAmount);
+    }
+
+    /**
+     * Emergency 2-of-3 Arbiter + Client refund in case of abandoned bounty before timeout.
+     */
+    function arbiterRefund(sig arbiterSig, sig clientSig, bytes20 clientRefundPkh) {
+        require(checkSig(arbiterSig, arbiterPk));
+        require(checkSig(clientSig, clientPk));
+
+        bytes25 clientLockingBytecode = new LockingBytecodeP2PKH(clientRefundPkh);
+        int minerFee = 1000;
+        require(tx.outputs[0].lockingBytecode == clientLockingBytecode);
+        require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - minerFee);
+    }
+}

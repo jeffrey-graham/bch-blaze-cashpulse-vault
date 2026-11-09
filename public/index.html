@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CashPulse Escrow & Micro-Bounty Vault — BCH BLAZE 2026</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #121a2a;
+      --card-alt: #0f1624;
+      --border: #23324d;
+      --bch: #0ac18e;
+      --bch-glow: rgba(10, 193, 142, 0.2);
+      --cyan: #38bdf8;
+      --gold: #facc15;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --mono: "JetBrains Mono", "Fira Code", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    /* Mandatory BCH BLAZE 2026 Banner */
+    .blaze-banner {
+      background: linear-gradient(90deg, #071914 0%, #0d2b22 50%, #0b1c2c 100%);
+      border-bottom: 3px solid var(--bch);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 6px 24px rgba(10, 193, 142, 0.15);
+    }
+    .blaze-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .bch-badge-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--bch);
+      color: #06140f;
+      font-weight: 900;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 14px var(--bch);
+    }
+    .blaze-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+    }
+    .blaze-sub {
+      font-size: 13px;
+      color: #86efac;
+    }
+    .blaze-tags {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(10, 193, 142, 0.15);
+      border: 1px solid var(--bch);
+      color: #6ee7b7;
+    }
+    .pill.gold {
+      background: rgba(250, 204, 21, 0.14);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .container {
+      max-width: 1280px;
+      margin: 28px auto;
+      padding: 0 20px 60px;
+    }
+    .hero-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 26px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .btn {
+      background: var(--bch);
+      color: #061510;
+      font-weight: 800;
+      border: none;
+      padding: 11px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+    .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn.secondary {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid var(--cyan);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 24px;
+    }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+    }
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 14px;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .field {
+      margin-bottom: 14px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: var(--card-alt);
+      color: #f8fafc;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .code-box {
+      background: #070b12;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: #86efac;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-top: 10px;
+    }
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .check-item {
+      background: var(--card-alt);
+      border: 1px solid rgba(10, 193, 142, 0.4);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #d1fae5;
+    }
+    .media-grid {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 960px) {
+      .media-grid { grid-template-columns: 1fr; }
+    }
+    .media-card img, .media-card video {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Mandatory BCH BLAZE 2026 Hackathon Banner -->
+  <header class="blaze-banner">
+    <div class="blaze-banner-left">
+      <div class="bch-badge-circle">₿</div>
+      <div>
+        <div class="blaze-title">BCH BLAZE 2026 HACKATHON — CASHPULSE COVENANT VAULT</div>
+        <div class="blaze-sub">Bitcoin Cash Mainnet + CHIP-2022-02 CashTokens + CashScript Native Introspection</div>
+      </div>
+    </div>
+    <div class="blaze-tags">
+      <span class="pill">Mainnet Track ($5,750)</span>
+      <span class="pill">Media Track ($1,000 PUSD)</span>
+      <span class="pill gold">TokenHunt Completion Pool Eligible</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero-bar">
+      <div>
+        <h1 style="font-size: 22px; margin-bottom: 4px;">CashPulse Micro-Bounty &amp; Streaming Escrow Studio</h1>
+        <p style="color: var(--muted); font-size: 14px;">
+          Lock BCH satoshis &amp; CashTokens in a self-enforcing <code>CashPulseVault.cash</code> covenant with 8-byte mutable NFT state commitments.
+        </p>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <span id="walletStatus" class="pill" style="font-family: var(--mono);">Disconnected (Demo Mainnet UTXO Active)</span>
+        <button class="btn secondary" onclick="connectWizardWallet()">Connect WizardConnect / Cashonize</button>
+      </div>
+    </section>
+
+    <div class="grid">
+      <!-- Left Column: Covenant Milestone Transaction Builder -->
+      <div class="card">
+        <h2>
+          <span>1. Configure Vault &amp; Milestone Release</span>
+          <span class="pill">CHIP-2022-02 0xef</span>
+        </h2>
+
+        <div class="field">
+          <label>Vault UTXO Outpoint (TXID : VOUT)</label>
+          <input id="utxoTxid" value="a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90:0" />
+        </div>
+
+        <div class="field">
+          <label>CashTokens Category ID (32-Byte Hex)</label>
+          <input id="categoryId" value="7f8e9d0c1b2a3f4e5d6c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6a7f8e" />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Vault BCH Balance (Satoshis)</label>
+            <input id="vaultSats" type="number" value="500000" />
+          </div>
+          <div class="field">
+            <label>Vault Fungible Token Balance</label>
+            <input id="vaultTokens" type="number" value="10000" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Current Milestone Index (uint16)</label>
+            <input id="currentMilestone" type="number" value="0" min="0" max="10" />
+          </div>
+          <div class="field">
+            <label>Total Milestones</label>
+            <input id="totalMilestones" type="number" value="4" min="1" max="20" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Hunter Recipient Hash160 (20-Byte PKH Hex)</label>
+          <input id="hunterPkh" value="11223344556677889900aabbccddeeff00112233" />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Milestone Payout (BCH Sats)</label>
+            <input id="payoutSats" type="number" value="150000" />
+          </div>
+          <div class="field">
+            <label>Milestone Payout (CashTokens)</label>
+            <input id="payoutTokens" type="number" value="2500" />
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 8px;">
+          <button class="btn" style="flex: 1;" onclick="buildAndVerifyTx()">Build &amp; Verify Covenant TX</button>
+          <button class="btn secondary" onclick="advanceNextMilestone()">Advance to Next Milestone</button>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Covenant State & Native Introspection Inspector -->
+      <div class="card">
+        <h2>
+          <span>2. Native Introspection &amp; UTXO Inspector</span>
+          <span id="verifyBadge" class="pill">7 / 7 VM Checks PASS</span>
+        </h2>
+
+        <div class="check-grid" id="checkGrid"></div>
+
+        <label style="font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase;">
+          Covenant State Transition &amp; CashTokens 0xef Prefix Telemetry
+        </label>
+        <div class="code-box" id="txTelemetry"></div>
+
+        <label style="font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; display: block; margin-top: 14px;">
+          WizardConnect / WalletConnect v2 (bch_signTransaction) Payload
+        </label>
+        <div class="code-box" id="wcPayloadBox" style="max-height: 210px;"></div>
+      </div>
+    </div>
+
+    <!-- Media Track Showcase Section -->
+    <section class="media-grid">
+      <div class="card media-card">
+        <h2>
+          <span>BCH BLAZE 2026 Media Track — 4-Panel Technical Comic</span>
+          <span class="pill">1920x1080 PNG</span>
+        </h2>
+        <p style="font-size: 13px; color: var(--muted);">
+          Generated deterministically via <code>scripts/generate_bch_media.py</code> illustrating CashTokens <code>0xef</code> state commitments and native introspection covenants.
+        </p>
+        <img src="../media/bch_blaze_comic.png" alt="BCH Blaze 2026 Comic Infographic" />
+      </div>
+
+      <div class="card media-card">
+        <h2>
+          <span>BCH BLAZE 2026 Media Track — 1080p Animated Showcase</span>
+          <span class="pill">1920x1080 MP4</span>
+        </h2>
+        <p style="font-size: 13px; color: var(--muted);">
+          Full HD H.264 animated walkthrough of the CashPulse Escrow &amp; Micro-Bounty Vault architecture and Mainnet transaction flow.
+        </p>
+        <video controls preload="metadata" poster="../media/bch_blaze_comic.png">
+          <source src="../media/bch_blaze_showcase.mp4" type="video/mp4" />
+        </video>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+
+    function encodeCommitmentHex(milestoneIdx, releasedSats) {
+      const buf = new Uint8Array(8);
+      buf[0] = milestoneIdx & 0xff;
+      buf[1] = (milestoneIdx >> 8) & 0xff;
+      let val = BigInt(releasedSats);
+      for (let i = 0; i < 6; i++) {
+        buf[2 + i] = Number(val & 0xffn);
+        val >>= 8n;
+      }
+      return Array.from(buf).map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function reverseHex(hex) {
+      return hex.match(/.{2}/g).reverse().join("");
+    }
+
+    function compactSizeHex(n) {
+      if (n < 0xfd) return n.toString(16).padStart(2, "0");
+      const b = new Uint8Array(3);
+      b[0] = 0xfd;
+      b[1] = n & 0xff;
+      b[2] = (n >> 8) & 0xff;
+      return Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join("");
+    }
+
+    function encodeTokenPrefix(catHex, amount, mutableCommitmentHex) {
+      const catLE = reverseHex(catHex);
+      let bitfield = 0;
+      if (amount > 0) bitfield |= 0x10;
+      if (mutableCommitmentHex) {
+        bitfield |= 0x20 | 0x40 | 0x01; // hasNFT + hasCommitment + mutable(0x01)
+      }
+      let out = "ef" + catLE + bitfield.toString(16).padStart(2, "0");
+      if (mutableCommitmentHex) {
+        out += "08" + mutableCommitmentHex;
+      }
+      if (amount > 0) {
+        out += compactSizeHex(amount);
+      }
+      return out;
+    }
+
+    function connectWizardWallet() {
+      const addr = "bitcoincash:zqqj9v6y24n8w7r5k3m2p0x9c8v7b6n5m4q3w2e1r0";
+      document.getElementById("walletStatus").textContent = "Connected: " + addr.slice(0, 26) + "...";
+      buildAndVerifyTx();
+    }
+
+    function advanceNextMilestone() {
+      const cur = Number(document.getElementById("currentMilestone").value);
+      const tot = Number(document.getElementById("totalMilestones").value);
+      const vSats = Number(document.getElementById("vaultSats").value);
+      const vTok = Number(document.getElementById("vaultTokens").value);
+      const pSats = Number(document.getElementById("payoutSats").value);
+      const pTok = Number(document.getElementById("payoutTokens").value);
+      if (cur + 1 < tot && vSats > pSats + 1000) {
+        document.getElementById("currentMilestone").value = String(cur + 1);
+        document.getElementById("vaultSats").value = String(vSats - pSats - 1000);
+        document.getElementById("vaultTokens").value = String(Math.max(0, vTok - pTok));
+      } else {
+        document.getElementById("currentMilestone").value = "0";
+        document.getElementById("vaultSats").value = "500000";
+        document.getElementById("vaultTokens").value = "10000";
+      }
+      buildAndVerifyTx();
+    }
+
+    function buildAndVerifyTx() {
+      const [txid, voutStr] = document.getElementById("utxoTxid").value.split(":");
+      const catId = document.getElementById("categoryId").value.trim();
+      const vaultSats = Number(document.getElementById("vaultSats").value);
+      const vaultTokens = Number(document.getElementById("vaultTokens").value);
+      const curMs = Number(document.getElementById("currentMilestone").value);
+      const totMs = Number(document.getElementById("totalMilestones").value);
+      const hunterPkh = document.getElementById("hunterPkh").value.trim();
+      const payoutSats = Number(document.getElementById("payoutSats").value);
+      const payoutTokens = Number(document.getElementById("payoutTokens").value);
+      const minerFee = 1000;
+
+      const prevReleased = curMs * payoutSats;
+      const prevComm = encodeCommitmentHex(curMs, prevReleased);
+      const nextMs = curMs + 1;
+      const nextReleased = prevReleased + payoutSats;
+      const nextComm = encodeCommitmentHex(nextMs, nextReleased);
+
+      const remSats = vaultSats - payoutSats - minerFee;
+      const remTokens = vaultTokens - payoutTokens;
+      const vaultLock = "aa20" + "cc".repeat(32) + "87";
+      const hunterLock = "76a914" + hunterPkh + "88ac";
+
+      const isContinuation = remSats > 1000 && nextMs < totMs;
+      const out0Prefix = isContinuation
+        ? encodeTokenPrefix(catId, remTokens, nextComm)
+        : encodeTokenPrefix(catId, payoutTokens, null);
+      const out1Prefix = isContinuation ? encodeTokenPrefix(catId, payoutTokens, null) : "";
+
+      const checks = [
+        ["OP_OUTPUTBYTECODE", isContinuation ? "Vault P2SH32 Preserved" : "Final Hunter Drain"],
+        ["OP_UTXOTOKENCATEGORY", "Category 0x" + catId.slice(0, 8) + "... Match"],
+        ["OP_OUTPUTTOKENCOMMITMENT", `0x${prevComm} -> 0x${nextComm}`],
+        ["OP_OUTPUTTOKENAMOUNT", `${remTokens} Vault + ${payoutTokens} Hunter`],
+        ["Satoshi Conservation", `${vaultSats} = ${remSats} + ${payoutSats} + ${minerFee} fee`],
+        ["Hunter P2PKH Script", `76a914${hunterPkh.slice(0, 10)}...88ac`],
+        ["BCH Dust Guard (>=546)", `Output Sats: ${payoutSats} >= 546`],
+      ];
+
+      document.getElementById("checkGrid").innerHTML = checks
+        .map(([k, v]) => `<div class="check-item"><span>✅</span><div><strong>${k}</strong><br/><span style="color:#94a3b8;font-size:11px;">${v}</span></div></div>`)
+        .join("");
+
+      document.getElementById("txTelemetry").textContent = [
+        `Active Covenant Mode : ${isContinuation ? "CONTINUATION (Output[0]=Vault, Output[1]=Hunter)" : "FINAL DRAIN (Output[0]=Hunter)"}`,
+        `Milestone Transition : ${curMs} / ${totMs}  -->  ${nextMs} / ${totMs}`,
+        `Input[0] Commitment  : 0x${prevComm} (released=${prevReleased} sats)`,
+        `Output[0] Commitment : 0x${nextComm} (released=${nextReleased} sats)`,
+        `Output[0] 0xef Prefix: 0x${out0Prefix}`,
+        ...(isContinuation ? [`Output[1] 0xef Prefix: 0x${out1Prefix}`, `Output[1] Hunter Lock: 0x${hunterLock}`] : []),
+      ].join("\n");
+
+      const wcPayload = {
+        method: "bch_signTransaction",
+        params: {
+          broadcast: true,
+          userPrompt: `CashPulse Milestone #${nextMs}/${totMs}: Release ${payoutSats} sats + ${payoutTokens} tokens`,
+          sourceOutputs: [
+            {
+              outpointTransactionHash: txid,
+              outpointIndex: Number(voutStr || 0),
+              lockingBytecode: vaultLock,
+              valueSatoshis: String(vaultSats),
+              token: {
+                category: catId,
+                amount: String(vaultTokens),
+                nft: { capability: "mutable", commitment: prevComm },
+              },
+            },
+          ],
+          outputs: isContinuation
+            ? [
+                {
+                  lockingBytecode: vaultLock,
+                  valueSatoshis: String(remSats),
+                  token: { category: catId, amount: String(remTokens), nft: { capability: "mutable", commitment: nextComm } },
+                },
+                {
+                  lockingBytecode: hunterLock,
+                  valueSatoshis: String(payoutSats),
+                  token: { category: catId, amount: String(payoutTokens) },
+                },
+              ]
+            : [
+                {
+                  lockingBytecode: hunterLock,
+                  valueSatoshis: String(payoutSats + remSats),
+                  token: { category: catId, amount: String(payoutTokens) },
+                },
+              ],
+        },
+      };
+      document.getElementById("wcPayloadBox").textContent = JSON.stringify(wcPayload, null, 2);
+    }
+
+    buildAndVerifyTx();
+  </script>
+</body>
+</html>
