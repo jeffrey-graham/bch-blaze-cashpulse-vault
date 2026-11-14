@@ -99,9 +99,14 @@ contract CashPulseVault(
 
         bytes25 clientLockingBytecode = new LockingBytecodeP2PKH(clientRefundPkh);
         int minerFee = 1000;
+        int inputTokens = tx.inputs[this.activeInputIndex].tokenAmount;
         require(tx.outputs[0].lockingBytecode == clientLockingBytecode);
         require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - minerFee);
-        require(tx.outputs[0].tokenAmount >= tx.inputs[this.activeInputIndex].tokenAmount);
+        if (inputTokens > 0) {
+            bytes32 fungibleCategory = bytes32(tx.inputs[this.activeInputIndex].tokenCategory.split(32)[0]);
+            require(tx.outputs[0].tokenCategory == fungibleCategory);
+            require(tx.outputs[0].tokenAmount >= inputTokens);
+        }
     }
 
     /**
@@ -113,7 +118,13 @@ contract CashPulseVault(
 
         bytes25 clientLockingBytecode = new LockingBytecodeP2PKH(clientRefundPkh);
         int minerFee = 1000;
+        int inputTokens = tx.inputs[this.activeInputIndex].tokenAmount;
         require(tx.outputs[0].lockingBytecode == clientLockingBytecode);
         require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value - minerFee);
+        if (inputTokens > 0) {
+            bytes32 fungibleCategory = bytes32(tx.inputs[this.activeInputIndex].tokenCategory.split(32)[0]);
+            require(tx.outputs[0].tokenCategory == fungibleCategory);
+            require(tx.outputs[0].tokenAmount >= inputTokens);
+        }
     }
 }

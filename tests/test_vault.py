@@ -68,6 +68,13 @@ class TestCashPulseVault(unittest.TestCase):
         self.assertEqual(res["outputs"][1]["locking_bytecode"], pkh_to_locking_bytecode(self.hunter_pkh))
         self.assertEqual(len(res["txid"]), 64)
 
+    def test_covenant_contract_preserves_cashtokens_on_refunds(self) -> None:
+        cash_path = os.path.join(os.path.dirname(__file__), "..", "contracts", "CashPulseVault.cash")
+        with open(cash_path, "r", encoding="utf-8") as f:
+            source = f.read()
+        self.assertEqual(source.count("require(tx.outputs[0].tokenCategory == fungibleCategory);"), 3)
+        self.assertGreaterEqual(source.count("require(tx.outputs[0].tokenAmount >= inputTokens);"), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
